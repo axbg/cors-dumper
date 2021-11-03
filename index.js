@@ -1,6 +1,7 @@
 const axios = require('axios');
 const express = require('express');
 const cors = require('cors');
+const decode = require('urldecode');
 
 require('dotenv').config()
 
@@ -9,12 +10,27 @@ const app = express();
 app.use(cors());
 
 app.get("/", async (req, res) => {
-	if (req.query.url) {
+	let status = 400;
+	let result = "URL param is empty";
+
+	if (req.query.url && req.query.body) {
+		const response = await axios.post(req.query.url, decode(req.query.body),
+			{
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+		
+		status = response.status;
+		result = response.data;
+	}
+	else if (req.query.url) {
 		const response = await axios.get(req.query.url);
-		return res.status(200).send({ response: response.data });
+		status = response.status;
+		result = response.data;
 	}
 
-	return res.status(400).send({ message: "URL param is empty" });
+	return res.status(status).send({ ...result });
 });
 
 const PORT = process.env.PORT || 8080;
